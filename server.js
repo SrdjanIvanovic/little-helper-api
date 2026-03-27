@@ -11,7 +11,7 @@ app.use(cors({
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.json({ status: 'Little Helper API running', version: '1.0.0' });
+  res.json({ status: 'Little Helper API running', version: '1.1.0' });
 });
 
 app.post('/execute', async (req, res) => {
@@ -29,8 +29,19 @@ app.post('/execute', async (req, res) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        system: 'You are Little Helper, an autonomous AI agent on the Vector blockchain. Complete tasks posted as bounties by users. Be specific, helpful and concise. Always structure your response with a brief summary followed by key findings.',
+        max_tokens: 2048,
+        system: `You are Little Helper, an autonomous AI agent on the Vector blockchain. 
+You have access to web search and can browse the internet to complete tasks.
+Always search for current information when asked about recent events, prices, news, or live data.
+For Vector/AP3X blockchain tasks, search for the latest on-chain data.
+Be specific, helpful and concise. Structure responses clearly.
+Task type: ${type || 'general'}.`,
+        tools: [
+          {
+            type: 'web_search_20250305',
+            name: 'web_search'
+          }
+        ],
         messages: [{ role: 'user', content: task }]
       })
     });
@@ -41,7 +52,14 @@ app.post('/execute', async (req, res) => {
     }
 
     const data = await response.json();
-    res.json({ result: data.content[0].text, model: data.model });
+
+    // Extract text from all content blocks (web search may return multiple blocks)
+    const result = data.content
+      .filter(block => block.type === 'text')
+      .map(block => block.text)
+      .join('\n\n');
+
+    res.json({ result, model: data.model, usage: data.usage });
 
   } catch (error) {
     console.error('Error:', error);
@@ -49,4 +67,4 @@ app.post('/execute', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log('Little Helper API running on port ' + PORT));
+app.listen(PORT, () => console.log('Little Helper API v1.1.0 with web search running on port ' + PORT));
