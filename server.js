@@ -67,4 +67,9 @@ Task type: ${type || 'general'}.`,
   }
 });
 
+app.get('/favicon.ico', (req, res) => {   // ← add here
+  res.set('Content-Type', 'image/svg+xml');
+  res.send('<svg xmlns="http://www.w3.org/2000/svg"><text y="32" font-size="32">🫴</text></svg>');
+});
+
 app.listen(PORT, () => console.log('Little Helper API v1.1.0 with web search running on port ' + PORT));
